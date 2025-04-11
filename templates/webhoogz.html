@@ -1,0 +1,388 @@
+{# 
+This file is part of Webhoogz - A CTFd webhook plugin
+
+Webhoogz is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#}
+
+{% extends "admin/base.html" %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/styles/github.min.css">
+<style>
+.webhook-entry {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #e1e4e8; /* GitHub border color */
+    border-radius: 6px;
+    background-color: #fff;
+}
+
+.event-checkboxes {
+    margin-top: 10px;
+}
+
+.add-webhook {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.input-group-append .btn {
+    height: 100%;
+}
+
+/* GitHub README-inspired event section */
+.events-section .card {
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+.events-section .card-header {
+    background-color: #f6f8fa; /* GitHub light gray */
+    border-bottom: 1px solid #e1e4e8;
+    padding: 10px 16px;
+}
+
+.events-section .card-header .btn-link {
+    color: #24292e; /* GitHub dark text */
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0;
+}
+
+.events-section .card-header .btn-link:hover {
+    color: #0366d6; /* GitHub blue hover */
+    text-decoration: none;
+}
+
+.event-entry {
+    padding: 16px 0;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+.event-entry:last-child {
+    border-bottom: none;
+}
+
+.event-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #24292e;
+    margin-bottom: 8px;
+}
+
+.event-description {
+    font-size: 14px;
+    color: #586069; /* GitHub muted text */
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+
+/* Ensure Prism styles integrate well */
+code[class*="language-"] {
+    background-color: #f6f8fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.45;
+    overflow-x: auto;
+    padding: 16px;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+/* Logs Section */
+.logs-section .card-header {
+    background-color: #f6f8fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-top: 10px;
+}
+
+.logs-section .card-header .btn-link {
+    color: #24292e;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0;
+}
+
+.logs-section .card-header .btn-link:hover {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+.logs-section .card-body {
+    padding: 16px;
+    border: 1px solid #e1e4e8;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    background-color: #fff;
+}
+
+.log-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-description {
+    font-size: 13px;
+    color: #24292e;
+    margin-bottom: 0;
+}
+
+.log-description .badge {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+.log-description .text-muted {
+    display: block;
+    color: #586069;
+    font-size: 12px;
+    margin-top: 4px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Webhoogz Settings</h2>
+
+		<!-- Event Reference Header -->
+    <div class="card mb-4 events-section">
+        <div class="card-header" id="eventsHeader">
+            <h5 class="mb-0">
+                <button class="btn btn-link text-dark" type="button" data-toggle="collapse" data-target="#eventsCollapse" 
+                        aria-expanded="false" aria-controls="eventsCollapse">
+										► Available Events and Data Structures
+                </button>
+            </h5>
+        </div>
+        <div id="eventsCollapse" class="collapse" aria-labelledby="eventsHeader">
+            <div class="card-body">
+                {% for event_id, event_data in webhook_events.items() %}
+                <div class="event-entry mb-4">
+                    <h3 class="event-title">{{ event_data.display_name }}</h3>
+                    <p class="event-description">{{ event_data.description }}</p>
+                    <pre><code class="language-json">{{ event_data.sample_payload | tojson(indent=2) }}</code></pre>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{{url_for('webhoogz.webhook_config_route')}}" id="webhook-form">
+				<div id="webhook-entries">
+            {% for config_id, data in webhook_config.items() %}
+            <div class="webhook-entry mb-3">
+                <input type="hidden" name="config_id" value="{{ config_id }}">
+                <div class="form-group">
+                    <label>Webhook URL</label>
+                    <input type="text" class="form-control" name="webhook_url" 
+                           value="{{ data.url }}" placeholder="Enter Webhook URL">
+                </div>
+                <div class="form-group">
+                    <label for="hmac_secret">HMAC Secret</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control hmac-secret" name="hmac_secret"
+                               value="{{ data.secret or '' }}" placeholder="Enter HMAC Secret for this URL">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-secondary toggle-hmac" 
+                                    onclick="toggleHmac(this)">Show</button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted">Optional: Signs requests to this URL. Falls back to WEBHOOK_SECRET if unset.</small>
+                </div>
+                <div class="event-checkboxes">
+                    <label>Subscribed Events:</label><br>
+                    {% for event_id, event_data in webhook_events.items() %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" 
+                               name="events_{{ event_id }}" value="{{ config_id }}"
+                               {% if event_id in data.events %}checked{% endif %}>
+                        <label class="form-check-label">{{ event_data.display_name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Logs Section -->
+                <div class="logs-section mt-3">
+                    <div class="card-header" id="logsHeader_{{ loop.index }}">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link text-dark" type="button" data-toggle="collapse" 
+                                    data-target="#logsCollapse_{{ loop.index }}" aria-expanded="false" 
+                                    aria-controls="logsCollapse_{{ loop.index }}">
+                                Event Logs for {{ data.url }}
+                            </button>
+                        </h5>
+                    </div>
+                    <div id="logsCollapse_{{ loop.index }}" class="collapse" aria-labelledby="logsHeader_{{ loop.index }}">
+                        <div class="card-body">
+                            {% if logs_by_url[data.url] %}
+                            {% for log in logs_by_url[data.url] %}
+                            <div class="log-entry mb-3">
+                                <p class="log-description">
+                                    <strong>{{ log.event_type }}</strong> - 
+                                    <span class="badge {% if log.status == 'success' %}badge-success{% else %}badge-danger{% endif %}">
+                                        {{ log.status }} {% if log.response_code %}{{ log.response_code }}{% endif %}
+                                    </span> - 
+                                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                                    {% if log.error_message %}
+                                    <br><small class="text-muted">{{ log.error_message }}</small>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-muted">No logs available for this URL yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+								<!-- Delete Button -->
+								<button type="button" 
+                        class="btn btn-danger btn-sm mt-2 delete-webhook-btn" 
+                        data-form-id="delete-form-{{ config_id }}" 
+                        onclick="handleDeleteClick(this)">
+                    Delete
+                </button>
+            </div>
+            {% endfor %}
+            <!-- Empty template for new entries -->
+            <div class="webhook-entry template" style="display: none;">
+                <input type="hidden" name="config_id" value="">
+                <div class="form-group">
+                    <label>Webhook URL</label>
+                    <input type="text" class="form-control" name="webhook_url" 
+                           placeholder="Enter Webhook URL">
+                </div>
+                <div class="form-group">
+                    <label for="hmac_secret">HMAC Secret</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control hmac-secret" name="hmac_secret"
+                               placeholder="Enter HMAC Secret for this URL">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-secondary toggle-hmac" 
+                                    onclick="toggleHmac(this)">Show</button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted">Optional: Signs requests to this URL. Falls back to WEBHOOK_SECRET if unset.</small>
+                </div>
+                <div class="event-checkboxes">
+                    <label>Subscribed Events:</label><br>
+                    {% for event_id, event_data in webhook_events.items() %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" 
+                               name="events_{{ event_id }}" value="">
+                        <label class="form-check-label">{{ event_data.display_name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <button type="button" class="btn btn-secondary add-webhook mt-3" onclick="addWebhook()">Add Webhook</button>
+        <button type="submit" class="btn btn-primary mt-3">Save Configuration</button>
+        <input type="hidden" name="nonce" value="{{ Session.nonce }}" id="nonce" />
+    </form>
+
+		<!-- Separate Delete Forms -->
+    {% for config_id in webhook_config.keys() %}
+    <form id="delete-form-{{ config_id }}" 
+          method="POST" 
+          action="{{ url_for('webhoogz.delete_webhook_config', config_id=config_id) }}" 
+          style="display: none;">
+        <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+    </form>
+    {% endfor %}
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes mt-3">
+            {% for message in messages %}
+                <li class="alert alert-success">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+		<div>Powered by Babidiii</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+	function addWebhook() {
+		const template = document.querySelector('.webhook-entry.template');
+		const clone = template.cloneNode(true);
+		clone.style.display = 'block';
+		clone.classList.remove('template');
+
+		// Update checkbox values to match new URL input
+		const urlInput = clone.querySelector('input[name="webhook_url"]');
+		urlInput.addEventListener('change', function() {
+			const checkboxes = clone.querySelectorAll('input[type="checkbox"]');
+			checkboxes.forEach(cb => cb.value = this.value);
+		});
+
+		document.getElementById('webhook-entries').appendChild(clone);
+	}
+
+	function toggleHmac(button) {
+    const inputGroup = button.closest('.input-group');
+    const input = inputGroup.querySelector('.hmac-secret');
+    if (input) {
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            button.textContent = 'Show';
+        }
+    } 
+	}
+
+function handleDeleteClick(button) {
+    const formId = button.getAttribute('data-form-id');
+    const form = document.getElementById(formId);
+    
+    if (button.dataset.confirm === 'true') {
+        // Second click: submit the form
+        form.submit();
+    } else {
+        // First click: change text to "SURE?" and set confirm state
+        button.textContent = 'SURE?';
+        button.dataset.confirm = 'true';
+        
+        // Reset after 3 seconds if no second click
+        setTimeout(() => {
+            if (button.dataset.confirm === 'true') {
+                button.textContent = 'Delete';
+                button.dataset.confirm = 'false';
+            }
+        }, 3000);
+    }
+}
+</script>
+{% endblock %}
