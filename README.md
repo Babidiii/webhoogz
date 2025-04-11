@@ -12,7 +12,7 @@ This plugin extends [CTFd](https://github.com/CTFd/CTFd) to send webhook notific
   - `scoreboard_update`: Provides periodic updates of the top 5 teams/users (debounced to reduce frequency).
 	- *Custom Events*: Define your own events (e.g., `user_signin`) with payloads and metadata.
 - **Configurable Webhooks**: Add multiple webhook URLs with event subscriptions and optional `HMAC secrets` via the admin panel.
-- - **Automatic Event UI**: Each event type registered appears in the admin UI with a checkbox for each webhook URL, allowing flexible subscriptions.
+- **Automatic Event UI**: Each event type registered appears in the admin UI with a checkbox for each webhook URL, allowing flexible subscriptions.
 - **Generated Documentation**: Event metadata (name, description, sample data) is displayed in the admin UI for easy reference.
 - **Logging**: Tracks webhook success/failure with timestamps and error messages.
 - **Debounced Scoreboard Updates**: Limits `scoreboard_update` events to once every 5 minutes to prevent spamming during high solve rates.
@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/1f41140d-0ab4-4820-8f3d-b372114cd22a
    - Navigate to your CTFd installation’s plugins directory and clone the plugin there:
      ```bash
      cd /path/to/CTFd/CTFd/plugins/
-     git clone https://github.com/Babidiii/ctfd-plugins.git webhooks
+     git clone https://github.com/Babidiii/webhoogz.git
      ```
 2. **Restart CTFd**:
    - **If using Docker Compose**:
@@ -111,5 +111,4 @@ This project is licensed under the **GNU Affero General Public License v3.0** (*
 - **Network Use**: If you modify and use the software over a network, you must make the source code available to all users who interact with it.
 - **Copyleft**: Any modifications or derivative works must also be licensed under the AGPL, ensuring that all changes remain open source.
 - **Patent Grant**: Contributors provide an express grant of patent rights, allowing users to freely use the software without concerns over patent claims. 
-- **No Sublicensing**: You cannot relicense the code under different terms; the AGPL's provisions must accompany all distributions and modifications. 
-
+- **No Sublicensing**: You cannot relicense the code under different terms; the AGPL's provisions must accompany all distributions and modifications.
